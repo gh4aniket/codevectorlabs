@@ -1,68 +1,20 @@
-/**
- * app.js — Product Browser frontend (vanilla JS, no build step)
- *
- * Pagination model
- * ----------------
- * We maintain a single map:  pageMap[pageNumber] = cursorToken
- *
- *   pageMap[1] is always null  (first page needs no cursor)
- *   pageMap[2] = the nextCursor returned by page 1's response
- *   pageMap[3] = the nextCursor returned by page 2's response
- *   …and so on.
- *
- * currentPage tracks which page is on screen right now.
- *
- * Next page:
- *   - If pageMap[currentPage + 1] already exists → fetch with that cursor directly.
- *   - Otherwise the API for the current page hasn't been called yet for its
- *     nextCursor; this shouldn't happen in practice (we always store the
- *     nextCursor immediately after every fetch), but as a safety fallback
- *     we can re-fetch the current page to get it.
- *
- * Previous page:
- *   - Always available as pageMap[currentPage - 1]  (populated when we first
- *     fetched that page or the page before it).
- *
- * Jump to page N (Go To):
- *   - If pageMap[N] exists → direct fetch with that cursor.
- *   - Otherwise walk forward from the highest known page, fetching each
- *     intermediate page purely to collect its nextCursor, until we reach N.
- *     Every intermediate cursor is stored in pageMap so the walk only ever
- *     happens once per page.
- *
- * No stack is maintained anywhere. There is no push/pop. The map grows
- * monotonically as pages are visited.
- */
 
 const API_BASE = 'https://codevectorlabs-snv8.onrender.com';
 
-// ---------------------------------------------------------------------
-// State
-// ---------------------------------------------------------------------
-
-/**
- * pageMap[n] = the cursor token needed to FETCH page n.
- * pageMap[1] is permanently null.
- * @type {Object.<number, string|null>}
- */
 let pageMap = { 1: null };
 
-/** Which page is currently displayed. */
+
 let currentPage = 1;
 
-/** Highest page number we have a cursor entry for. */
+
 let highestKnownPage = 1;
 
-/** Set once any page comes back with hasNextPage === false. */
+
 let knownLastPage = null;
 
 let currentCategory = '';
 let currentLimit = 20;
 let isLoading = false;
-
-// ---------------------------------------------------------------------
-// DOM refs
-// ---------------------------------------------------------------------
 
 const el = {
   categorySelect: document.getElementById('categorySelect'),
@@ -85,9 +37,6 @@ const el = {
   gotoStatus: document.getElementById('gotoStatus'),
 };
 
-// ---------------------------------------------------------------------
-// API
-// ---------------------------------------------------------------------
 
 async function fetchProducts({ category, cursor, limit }) {
   const params = new URLSearchParams();
@@ -109,9 +58,6 @@ async function fetchCategories() {
   return res.json();
 }
 
-// ---------------------------------------------------------------------
-// Rendering
-// ---------------------------------------------------------------------
 
 function setStatus(message, variant) {
   if (!message) {
@@ -165,10 +111,7 @@ function renderPageInfo(pageInfo) {
   updateGotoBounds(pageInfo.totalCount);
 }
 
-/**
- * Store the cursor needed to reach the NEXT page (pageNum + 1).
- * Called after every successful fetch so the map is always up-to-date.
- */
+
 function storeNextCursor(pageNum, pageInfo) {
   if (pageInfo.hasNextPage && pageInfo.nextCursor) {
     pageMap[pageNum + 1] = pageInfo.nextCursor;
@@ -206,19 +149,13 @@ function setLoading(loading) {
   }
 }
 
-// ---------------------------------------------------------------------
-// Core load — fetch a specific page by number using pageMap
-// ---------------------------------------------------------------------
 
-/**
- * Fetch and display the given page number.
- * Requires pageMap[pageNum] to already exist (i.e. we know the cursor for it).
- */
+
 async function loadPage(pageNum) {
   if (isLoading) return;
   setLoading(true);
 
-  const cursor = pageMap[pageNum]; // null for page 1, token otherwise
+  const cursor = pageMap[pageNum]; 
 
   try {
     const data = await fetchProducts({
@@ -246,15 +183,11 @@ async function loadPage(pageNum) {
   }
 }
 
-// ---------------------------------------------------------------------
-// Navigation
-// ---------------------------------------------------------------------
 
 function goToNextPage() {
   if (isLoading) return;
   const nextPage = currentPage + 1;
-  // The cursor for the next page is always stored right after we fetched
-  // the current page (see storeNextCursor). If somehow it's missing we bail.
+
   if (!(nextPage in pageMap)) {
     setStatus('Next page cursor not available yet.', 'error');
     return;
@@ -264,8 +197,7 @@ function goToNextPage() {
 
 function goToPreviousPage() {
   if (currentPage <= 1 || isLoading) return;
-  // Previous page's cursor is always in pageMap — it was there before
-  // we ever fetched the current page.
+ 
   loadPage(currentPage - 1);
 }
 
@@ -274,21 +206,6 @@ function resetToFirstPage() {
   loadPage(1);
 }
 
-// ---------------------------------------------------------------------
-// Direct page jump ("go to page N")
-//
-// pageMap[N] tells us the cursor to fetch page N directly.
-// If we don't have it yet, we walk forward from the highest known page,
-// fetching each intermediate page to collect its nextCursor, storing
-// each one in pageMap as we go. Once pageMap[N] is populated we do
-// the final real fetch for that page.
-//
-// Every intermediate cursor is permanently cached in pageMap so the
-// walk only ever happens once per page, regardless of how many times
-// a user jumps to that page or nearby pages.
-// ---------------------------------------------------------------------
-
-/** Low-level fetch that only returns the data without changing display state. */
 async function fetchPageRaw(cursor) {
   return fetchProducts({ category: currentCategory, cursor, limit: currentLimit });
 }
@@ -305,30 +222,29 @@ async function goToPage(targetPage) {
     return;
   }
 
-  // If we already know the cursor for this page, just load it directly.
+ 
   if (targetPage in pageMap) {
     loadPage(targetPage);
     return;
   }
 
-  // Walk forward from the highest page we have a cursor for.
   setLoading(true);
   renderGotoStatus(`Jumping to page ${targetPage}…`);
 
   try {
-    // Find the highest page already in pageMap that is ≤ targetPage.
+ 
     let walkFrom = highestCachedPageAtOrBelow(targetPage);
 
-    // Walk page-by-page, storing each nextCursor into pageMap.
+
     while (!(targetPage in pageMap)) {
       const cursorForWalkFrom = pageMap[walkFrom];
       const data = await fetchPageRaw(cursorForWalkFrom);
 
-      // Store the cursor for the page after walkFrom.
+    
       storeNextCursor(walkFrom, data.pageInfo);
 
       if (!data.pageInfo.hasNextPage) {
-        // Real end of data reached before targetPage.
+
         knownLastPage = walkFrom;
         renderGotoStatus(`Only ${walkFrom} page(s) exist for this filter.`, 'error');
         setLoading(false);
@@ -338,7 +254,7 @@ async function goToPage(targetPage) {
       walkFrom += 1;
     }
 
-    // pageMap[targetPage] is now populated — do the real rendered fetch.
+   
     setLoading(false);
     loadPage(targetPage);
   } catch (err) {
@@ -362,9 +278,7 @@ function onGotoSubmit() {
   goToPage(targetPage);
 }
 
-// ---------------------------------------------------------------------
-// Filters
-// ---------------------------------------------------------------------
+
 
 async function initCategoryFilter() {
   try {
@@ -377,27 +291,25 @@ async function initCategoryFilter() {
     }
   } catch (err) {
     console.error('Failed to load categories:', err);
-    // Non-fatal: "All categories" still works without this list.
+  
   }
 }
 
 function onCategoryChange() {
   currentCategory = el.categorySelect.value;
-  // Changing the filter invalidates all previously discovered cursors —
-  // cursors are specific to a query shape (category + limit).
+
   invalidatePageMap();
   resetToFirstPage();
 }
 
 function onLimitChange() {
   currentLimit = parseInt(el.limitSelect.value, 10);
-  // Page size changes which row falls at each boundary, so all old
-  // cursors are meaningless for the new page size.
+  
   invalidatePageMap();
   resetToFirstPage();
 }
 
-/** Wipe everything keyed to the old query shape. */
+
 function invalidatePageMap() {
   pageMap = { 1: null };
   highestKnownPage = 1;
@@ -405,9 +317,6 @@ function invalidatePageMap() {
   currentPage = 1;
 }
 
-// ---------------------------------------------------------------------
-// Wire up
-// ---------------------------------------------------------------------
 
 el.nextBtn.addEventListener('click', goToNextPage);
 el.prevBtn.addEventListener('click', goToPreviousPage);

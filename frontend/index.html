@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Browser — Keyset Pagination</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ============== LEFT RAIL: cursor stack visualization ============== -->
+    <aside class="rail" aria-label="Cursor stack">
+      <div class="rail__header">
+        <span class="rail__eyebrow">cursor stack</span>
+        <h2 class="rail__title">Pagination state</h2>
+        <p class="rail__copy">
+          Every <code>nextCursor</code> returned by the API gets pushed here.
+          “Next” pushes and reads the top. “Previous” pops, then reads the
+          new top.
+        </p>
+      </div>
+
+      <div class="stack" id="cursorStack" role="list" aria-label="Stack of page cursors">
+        <!-- stack chips injected by app.js -->
+      </div>
+
+      <div class="rail__footer">
+        <div class="rail__stat">
+          <span class="rail__stat-label">current page</span>
+          <span class="rail__stat-value" id="currentPageNum">1</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============== MAIN ============== -->
+    <main class="main">
+
+      <header class="topbar">
+        <div class="topbar__identity">
+          <span class="topbar__mark">◧</span>
+          <div>
+            <h1 class="topbar__title">Product Browser</h1>
+            <p class="topbar__subtitle">id-keyset pagination · live Supabase data</p>
+          </div>
+        </div>
+
+        <div class="topbar__meta">
+          <div class="meta-pill" id="totalCountPill">
+            <span class="meta-pill__label">total</span>
+            <span class="meta-pill__value" id="totalCountValue">—</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="controls" aria-label="Filters">
+        <div class="field">
+          <label class="field__label" for="categorySelect">Category</label>
+          <select class="field__select" id="categorySelect">
+            <option value="">All categories</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="limitSelect">Page size</label>
+          <select class="field__select" id="limitSelect">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+
+        <button class="btn btn--ghost" id="resetBtn" type="button">
+          Reset to page 1
+        </button>
+      </section>
+
+      <section class="table-wrap" aria-label="Products">
+        <div class="table-status" id="tableStatus" hidden></div>
+
+        <table class="ptable">
+          <thead>
+            <tr>
+              <th class="ptable__id">id</th>
+              <th>name</th>
+              <th>category</th>
+              <th class="ptable__num">price</th>
+              <th>created_at</th>
+              <th>updated_at</th>
+            </tr>
+          </thead>
+          <tbody id="productsBody">
+            <!-- rows injected by app.js -->
+          </tbody>
+        </table>
+
+        <div class="empty-state" id="emptyState" hidden>
+          <p class="empty-state__title">No products on this page</p>
+          <p class="empty-state__copy">Try a different category, or reset to page 1.</p>
+        </div>
+      </section>
+
+      <footer class="pager" aria-label="Pagination">
+        <button class="btn btn--page" id="prevBtn" type="button" disabled>
+          <span aria-hidden="true">←</span> Previous
+        </button>
+
+        <div class="pager__info">
+          <span id="pageRangeLabel">—</span>
+        </div>
+
+        <div class="goto" aria-label="Jump to page">
+          <label class="goto__label" for="gotoInput">Page</label>
+          <input
+            class="goto__input"
+            id="gotoInput"
+            type="number"
+            min="1"
+            inputmode="numeric"
+            placeholder="#"
+          />
+          <span class="goto__hint" id="gotoMaxHint">of —</span>
+          <button class="btn btn--ghost btn--small" id="gotoBtn" type="button">
+            Go
+          </button>
+        </div>
+
+        <button class="btn btn--page btn--primary" id="nextBtn" type="button" disabled>
+          Next <span aria-hidden="true">→</span>
+        </button>
+      </footer>
+
+      <p class="goto-status" id="gotoStatus" aria-live="polite"></p>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

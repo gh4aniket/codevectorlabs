@@ -105,18 +105,6 @@ This is also simpler for the client: one opaque cursor field instead
 of three (`snapshotTime`, `cursorId`, `cursorUpdatedAt`) that all have
 to be round-tripped correctly.
 
-**The tradeoff:** "newest first" here means *newest by insertion*, not
-"most recently changed first." If the intent was actually a
-"recently active items first" feed (more like a changelog or activity
-stream than a product catalog), this design isn't the right fit -
-that use case genuinely wants `updated_at` as the sort key, and would
-need a different correctness strategy (e.g. an immutable, monotonic
-`version`/`sequence` column bumped on every write via a sequence or
-trigger, rather than the wall-clock `updated_at` value itself, which
-is exactly the kind of column the original design was trying and
-failing to use `updated_at` as). For a product catalog - which is what
-this brief describes - "newest first" reading as "newest added" is the
-standard and expected interpretation, so I went with it.
 
 ## Pagination correctness, restated
 

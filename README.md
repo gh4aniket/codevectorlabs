@@ -169,3 +169,73 @@ building 200,000 JS objects to ship as one huge JSON payload (still
 pays full network transfer for data that never needed to leave the
 database). Tune batch size with `node scripts/seed.js --batch=2000` or
 total rows with `--count=50000`.
+
+# Product Browser Frontendend
+
+The frontend is built using vanilla HTML, CSS, and JavaScript and communicates with the backend through REST APIs.
+
+### Product Fetching
+
+Products are loaded from the backend using cursor-based pagination instead of traditional page-offset pagination. The frontend sends requests to the `/products` endpoint with the selected category, page size, and cursor.
+
+### Cursor Cache
+
+The frontend maintains a cache:
+
+```javascript
+pageMap[pageNumber] = cursor
+```
+
+Each page number is mapped to the cursor required to fetch that page.
+
+Example:
+
+```javascript
+pageMap[1] = null;
+pageMap[2] = 199981;
+pageMap[3] = 199961;
+```
+
+This allows previously visited pages to be loaded instantly without rediscovering cursors.
+
+### Next / Previous Navigation
+
+- Clicking **Next** uses the `nextCursor` returned by the backend.
+- Clicking **Previous** uses the cursor already stored for the previous page.
+- No OFFSET-based queries are required.
+
+### Direct Page Navigation
+
+When a user jumps directly to a page:
+
+1. The frontend checks whether the page's cursor is already cached.
+2. If cached, the page is loaded immediately.
+3. If not cached, the frontend progressively fetches intermediate pages until the required cursor is discovered.
+4. Newly discovered cursors are stored in the cache for future use.
+
+### Category Filtering
+
+When the selected category changes:
+
+- Cached cursors are cleared.
+- Pagination state is reset.
+- Product data is reloaded from page 1 using the selected filter.
+
+### Page Size Changes
+
+When the page size changes:
+
+- All cached cursors become invalid.
+- The cursor cache is reset.
+- Data is fetched again from the beginning using the new page size.
+
+### User Interface Features
+
+- Product table view
+- Category filtering
+- Configurable page sizes
+- Next / Previous navigation
+- Direct page jumps
+- Total product counts
+- Cursor visualization panel
+- Loading and empty-state handling

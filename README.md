@@ -170,7 +170,7 @@ pays full network transfer for data that never needed to leave the
 database). Tune batch size with `node scripts/seed.js --batch=2000` or
 total rows with `--count=50000`.
 
-# Product Browser Frontendend
+# Product Browser Frontend
 
 The frontend is built using vanilla HTML, CSS, and JavaScript and communicates with the backend through REST APIs.
 

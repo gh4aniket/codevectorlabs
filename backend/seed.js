@@ -1,25 +1,4 @@
-/**
- * scripts/seed.js
- *
- * Generates ~200,000 products in Supabase Postgres.
- *
- * Approach: each batch's actual row construction happens inside
- * Postgres (see sql/002_seed_function.sql, seed_products_batch),
- * not in this script. This script just fires the batches and reports
- * progress. That split is the "don't do a slow approach in a loop"
- * fix - 40 RPC calls of 5000 rows each, instead of either:
- *   (a) 200,000 individual .insert() calls (extremely slow: network +
- *       HTTP overhead per row), or
- *   (b) building 200,000 JS objects and shipping them as one giant
- *       JSON payload over HTTP (memory-heavy, slow to serialize, and
- *       still pays full network transfer for data that never needed
- *       to leave the database).
- *
- * Usage:
- *   node scripts/seed.js                 # seeds 200,000 products
- *   node scripts/seed.js --count=50000   # seed a smaller amount
- *   node scripts/seed.js --batch=2000    # change batch size
- */
+
 
 import { createClient } from '@supabase/supabase-js';
 import 'dotenv/config';
@@ -33,8 +12,7 @@ function argValue(name, fallback) {
 }
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-// Seeding needs to bypass RLS and call an admin-ish RPC, so this must
-// be the secret/service-role key, never the publishable/anon key.
+
 const SUPABASE_SECRET_KEY =
   process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -79,9 +57,7 @@ async function main() {
     console.log(`  batch ${batchNum}: +${thisBatch} rows  (${done}/${TOTAL}, ${pct}%)`);
   }
 
-  // Backfill category_counts in case this is a fresh seed and the
-  // table didn't exist when earlier rows were inserted by some other
-  // path. Cheap no-op if triggers already kept it in sync.
+  
   const { error: rebuildError } = await supabase.rpc('rebuild_category_counts');
   if (rebuildError) {
     console.warn('Warning: rebuild_category_counts failed:', rebuildError.message);

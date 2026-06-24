@@ -34,7 +34,7 @@
  * monotonically as pages are visited.
  */
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'https://codevectorlabs-snv8.onrender.com';
 
 // ---------------------------------------------------------------------
 // State

@@ -4,6 +4,16 @@ Express + Supabase (Postgres) backend for browsing ~200,000 products,
 newest-first, with category filtering and pagination that stays
 correct while data is being written concurrently.
 
+## Links
+
+🔗 **Live Frontend:** https://codevectorlabs.vercel.app/
+
+🔗 **Live Backend API:** https://codevectorlabs-snv8.onrender.com
+
+🔗 **Supabase Project:** https://xhsiaykzdbermuywspjv.supabase.co
+
+🔗 **GitHub Repository:** https://github.com/gh4aniket/codevectorlabs
+
 ## Setup
 
 ```bash
